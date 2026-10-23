@@ -1,0 +1,12 @@
+defaults:
+  - flame_fromvggt_largepairs_fixed_fov_unified_crop_depth_norm_delta_t_rot1
+  - _self_
+
+exp_name: flame_fromvggt_largepairs_fixed_fov_unified_crop_depth_norm_delta_t_rot1_vggtinit
+
+logging:
+  wandb:
+    name: ${exp_name}
+    id: ${exp_name}
+    tags: ["from-vggt", "vggtinit", "large-pairs", "fixed-fov", "unified-crop", "depth-norm-delta-t", "rot-1", "focal-ratio"]
+    notes: "VGGT-1B initialization into the LoRA-wrapped backbone; fixed FoV, unified crop, depth-normalized translation target, rotation weight 1.0, focal-ratio loss enabled."

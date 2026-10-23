@@ -1,0 +1,316 @@
+defaults:
+  - default_dataset.yaml
+  - _self_
+
+exp_name: flame_h2c_lora
+img_size: 518
+num_workers: 8
+seed_value: 42
+accum_steps: 4
+patch_size: 14
+val_epoch_freq: 1
+max_img_per_gpu: 1
+
+limit_train_batches: 500
+limit_val_batches: 100
+
+data:
+  train:
+    _target_: data.dynamic_dataloader.DynamicTorchDataset
+    num_workers: ${num_workers}
+    max_img_per_gpu: ${max_img_per_gpu}
+    shuffle: True
+    pin_memory: False
+    common_config:
+      fix_img_num: 2
+      fix_aspect_ratio: 1.0
+      load_track: False
+      training: True
+      inside_random: True
+      img_size: ${img_size}
+      patch_size: ${patch_size}
+      rescale: True
+      rescale_aug: True
+      landscape_check: False
+      debug: False
+      get_nearby: False
+      load_depth: False
+      img_nums: [2, 2]
+      max_img_per_gpu: ${max_img_per_gpu}
+      allow_duplicate_img: False
+      repeat_batch: False
+      scale_by_points: False
+      augs:
+        cojitter: True
+        cojitter_ratio: 0.3
+        scales: [0.9, 1.1]
+        aspects: [1.0, 1.0]
+        color_jitter:
+          brightness: 0.3
+          contrast: 0.3
+          saturation: 0.3
+          hue: 0.05
+          p: 0.8
+        gray_scale: False
+        gau_blur: False
+    dataset:
+      _target_: data.composed_dataset.ComposedDataset
+      dataset_configs:
+        - _target_: data.datasets.flame_h2c.FlameH2CDataset
+          split: train
+          root_dirs:
+            - path: /path/to/blended_in_flames/sample_outputs/dataset_20k_hair_v2
+              name: hair
+            - path: /path/to/blended_in_flames/sample_outputs/ar_pose_poc_5k
+              name: nohair
+          len_train: 200000
+          same_identity: True
+          same_lighting: True
+          same_expression: False
+          n_val_identities_per_root: 5
+          split_seed: 42
+          face_crop: True
+          ad_min: 0.4
+          ad_max: 0.6
+          shift_ratio: 0.01
+          bbox_filename: face_bbox.npy
+          color_aug: True
+
+  val:
+    _target_: data.dynamic_dataloader.DynamicTorchDataset
+    num_workers: ${num_workers}
+    max_img_per_gpu: ${max_img_per_gpu}
+    shuffle: False
+    pin_memory: False
+    common_config:
+      fix_img_num: 2
+      fix_aspect_ratio: 1.0
+      load_track: False
+      training: False
+      inside_random: True
+      img_size: ${img_size}
+      patch_size: ${patch_size}
+      rescale: True
+      rescale_aug: False
+      landscape_check: False
+      debug: False
+      get_nearby: False
+      load_depth: False
+      img_nums: [2, 2]
+      allow_duplicate_img: False
+      augs:
+        cojitter: False
+        scales: null
+        aspects: [1.0, 1.0]
+        color_jitter: null
+        gray_scale: False
+        gau_blur: False
+    dataset:
+      _target_: data.composed_dataset.ComposedDataset
+      dataset_configs:
+        - _target_: data.datasets.flame_h2c.FlameH2CDataset
+          split: test
+          root_dirs:
+            - path: /path/to/blended_in_flames/sample_outputs/dataset_20k_hair_v2
+              name: hair
+            - path: /path/to/blended_in_flames/sample_outputs/ar_pose_poc_5k
+              name: nohair
+          len_test: 5000
+          same_identity: True
+          same_lighting: True
+          same_expression: False
+          # Same split params — ensures val gets the held-out identities
+          n_val_identities_per_root: 5
+          split_seed: 42
+          # Face crop (deterministic for val — no shift, fixed margin)
+          face_crop: True
+          ad_min: 0.0
+          ad_max: 0.2
+          shift_ratio: 0.1
+          bbox_filename: face_bbox.npy
+          color_aug: False
+
+logging:
+  log_dir: logs
+  log_visuals: True
+  log_freq: 10
+  log_level_primary: DEBUG
+  log_level_secondary: WARNING
+  all_ranks: False
+  tensorboard_writer:
+    _target_: train_utils.tb_writer.TensorBoardLogger
+    path: ${logging.log_dir}/tensorboard
+  wandb:
+    enabled: True
+    project: "reva-hpe"
+    name: ${exp_name}
+    tags: ["lora", "vggt-1b", "quaternion"]
+    notes: "LoRA finetuning of VGGT-1B for H2C prediction"
+    mode: "offline"
+    dir: ${logging.log_dir}/wandb
+  pose_visual_frequency:
+    train: 10
+    val: 50
+  save_visuals_locally: True
+  visuals_save_dir: "${exp_name}/visualizations"
+  scalar_keys_to_log:
+    train:
+      keys_to_log:
+        - loss_objective
+        - loss_camera
+        - loss_T
+        - loss_T_norm
+        - loss_T_dir
+        - loss_T_log_norm
+        - loss_reproj
+        - loss_T_decoded_norm
+        - loss_T_decoded_projective
+        - loss_T_decoded_head_reproj
+        - loss_R
+        - loss_FL
+        - loss_abs_T
+        - loss_abs_R
+        - loss_abs_FL
+    val:
+      keys_to_log:
+        - loss_objective
+        - loss_camera
+        - loss_T
+        - loss_T_norm
+        - loss_T_dir
+        - loss_T_log_norm
+        - loss_reproj
+        - loss_T_decoded_norm
+        - loss_T_decoded_projective
+        - loss_T_decoded_head_reproj
+        - loss_R
+        - loss_FL
+        - loss_abs_T
+        - loss_abs_R
+        - loss_abs_FL
+
+checkpoint:
+  save_dir: logs/${exp_name}/ckpts
+  save_freq: 5
+  resume_checkpoint_path: /path/to/checkpoints/VGGT-1B/model.pt
+  strict: False
+
+pose_encoding_type: "absT_quaR_FoV"
+
+loss:
+  _target_: loss.MultitaskLoss
+  camera:
+    weight: 1.0
+    loss_type: "l1"
+    weight_trans: 1.0
+    weight_trans_norm: 0.0
+    weight_trans_dir: 0.0
+    weight_trans_log_norm: 0.0
+    weight_reproj: 0.0
+    weight_decoded_norm: 0.0
+    weight_decoded_projective: 0.0
+    weight_decoded_head_reproj: 0.0
+    weight_rot: 1.0
+    weight_focal: 0.5
+    use_focal_ratio: True
+    pose_supervise_frame_idxs: null
+    rotation_loss_type: "encoding"
+    rotation_geodesic_eps: 1e-7
+    trans_aux_loss_type: "smooth_l1"
+    trans_aux_beta: 0.1
+    trans_aux_min_norm: 1e-4
+    decoded_aux_loss_type: "smooth_l1"
+    decoded_aux_beta: 0.1
+    decoded_aux_frame_idxs: null
+    decoded_head_reproj_loss_type: "smooth_l1"
+    decoded_head_reproj_beta: 5.0
+    decoded_head_reproj_min_depth: 1e-4
+    reproj_loss_type: "smooth_l1"
+    reproj_beta: 5.0
+    reproj_min_depth: 1e-4
+    reproj_num_points: 256
+    reproj_frame_idxs: null
+    reproj_use_gt_intrinsics: True
+    pose_encoding_type: ${pose_encoding_type}
+  depth: null
+  point: null
+  track: null
+
+optim:
+  param_group_modifiers: False
+
+  optimizer:
+    _target_: torch.optim.AdamW
+    lr: 1e-4
+    weight_decay: 0.01
+
+  amp:
+    enabled: True
+    amp_dtype: bfloat16
+
+  gradient_clip:
+    _target_: train_utils.gradient_clip.GradientClipper
+    configs:
+      - module_name: ["camera"]
+        max_norm: 1.0
+        norm_type: 2
+      - module_name: ["aggregator"]
+        max_norm: 1.0
+        norm_type: 2
+
+  options:
+    lr:
+      - scheduler:
+          _target_: fvcore.common.param_scheduler.CompositeParamScheduler
+          schedulers:
+            - _target_: fvcore.common.param_scheduler.LinearParamScheduler
+              start_value: 1e-6
+              end_value: 1e-4
+            - _target_: fvcore.common.param_scheduler.CosineParamScheduler
+              start_value: 1e-4
+              end_value: 1e-6
+          lengths: [0.1, 0.9]
+          interval_scaling: ['rescaled', 'rescaled']
+    weight_decay:
+      - scheduler:
+          _target_: fvcore.common.param_scheduler.ConstantParamScheduler
+          value: 0.01
+
+max_epochs: 200
+
+model:
+  _target_: vggt.models.vggt.VGGT
+  enable_camera: True
+  enable_depth: False
+  enable_point: False
+  enable_track: False
+  pose_encoding_type: ${pose_encoding_type}
+  lora:
+    enabled: True
+    rank: 8
+    alpha: 16
+    dropout: 0.0
+    freeze_base: True
+    target_patterns:
+      - "frame_blocks.*.attn.qkv"
+      - "frame_blocks.*.attn.proj"
+      - "frame_blocks.*.mlp.fc1"
+      - "frame_blocks.*.mlp.fc2"
+      - "global_blocks.*.attn.qkv"
+      - "global_blocks.*.attn.proj"
+      - "global_blocks.*.mlp.fc1"
+      - "global_blocks.*.mlp.fc2"
+
+distributed:
+  backend: nccl
+  comms_dtype: None
+  find_unused_parameters: False
+  timeout_mins: 30
+  gradient_as_bucket_view: True
+  bucket_cap_mb: 25
+  broadcast_buffers: True
+
+cuda:
+  cudnn_deterministic: False
+  cudnn_benchmark: False
+  allow_tf32: True

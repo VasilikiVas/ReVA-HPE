@@ -1,0 +1,25 @@
+__pycache__/
+*.py[cod]
+*.orig
+*.rej
+*.swp
+.pytest_cache/
+.venv/
+assets.env
+# Run outputs (top-level only).
+/cache/
+/checkpoints/
+/logs/
+/outputs/
+/pair_manifests/
+/results/
+/runtime/
+/tensorboard/
+/visualizations/
+# Never commit weights or experiment dumps.
+ckpts/
+wandb/
+*.pt
+*.pth
+*.ckpt
+*.pkl

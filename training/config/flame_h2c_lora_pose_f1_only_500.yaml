@@ -1,0 +1,35 @@
+defaults:
+  - flame_h2c_lora
+  - _self_
+
+exp_name: flame_h2c_lora_pose_f1_only_500
+max_epochs: 500
+
+logging:
+  wandb:
+    enabled: True
+    project: "reva-hpe"
+    name: ${exp_name}
+    id: ${exp_name}
+    resume: True
+    tags: ["lora", "vggt-1b", "quaternion", "relative-h2c", "frame1-pose-only", "focal-ratio"]
+    notes: "Relative H2C for 500 epochs with T/R supervised only on frame 1 and focal ratio kept on the full pair"
+    mode: "offline"
+    dir: ${logging.log_dir}/wandb
+  pose_visual_frequency:
+    train: 0
+    val: 25
+  visuals_save_dir: "${exp_name}/visualizations"
+
+loss:
+  camera:
+    weight_trans: 1.0
+    weight_trans_dir: 0.0
+    weight_trans_log_norm: 0.0
+    weight_reproj: 0.0
+    weight_rot: 1.0
+    weight_focal: 0.5
+    use_focal_ratio: True
+    pose_supervise_frame_idxs: [1]
+    rotation_loss_type: "encoding"
+

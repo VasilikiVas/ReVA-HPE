@@ -1,0 +1,11 @@
+{
+  "protocol": "biwi_table1",
+  "nominal_query_count": 15654,
+  "subject_count": 24,
+  "query_key_sha256": "00e3f328eb7ee327a29e7f627e0be02f2cf62e47c1a826881f3efbc01dfa3f27",
+  "detector": "MTCNN",
+  "crop": "256 px MTCNN square pair union",
+  "bank_schedule": "20 directions x 5 radii = 100 candidates",
+  "enrollment": "first available frame per subject, removed from the query set",
+  "gt_usage": "GT defines pose bins and scores metrics only; prediction paths are GT-free."
+}

@@ -1,0 +1,67 @@
+defaults:
+  - flame_h2c_lora_pose_f1_only_500
+  - _self_
+
+max_epochs: 500
+limit_train_batches: 500
+limit_val_batches: 100
+num_workers: 0
+
+data:
+  train:
+    seed: ${seed_value}
+    common_config:
+      inside_random: False
+      rescale_aug: False
+      landscape_check: False
+      augs:
+        cojitter: False
+        cojitter_ratio: 0.0
+        scales: null
+        aspects: [1.0, 1.0]
+        color_jitter:
+          brightness: 0.3
+          contrast: 0.3
+          saturation: 0.3
+          hue: 0.05
+          p: 0.8
+        gray_scale: False
+        gau_blur: False
+  val:
+    seed: ${seed_value}
+    common_config:
+      inside_random: False
+      rescale_aug: False
+      landscape_check: False
+      augs:
+        cojitter: False
+        cojitter_ratio: 0.0
+        scales: null
+        aspects: [1.0, 1.0]
+        color_jitter: null
+        gray_scale: False
+        gau_blur: False
+
+logging:
+  log_visuals: True
+  save_visuals_locally: True
+  wandb:
+    enabled: True
+    project: "reva-hpe"
+    name: ${exp_name}
+    id: ${exp_name}
+    resume: False
+    tags: ["step1", "fixed-pairs", "published-method", "pose-f1", "focal-ratio"]
+    notes: "Step 1 fixed-pair crop/FoV ablation with deterministic geometry and pair-indexed appearance jitter."
+    mode: "offline"
+    dir: ${logging.log_dir}/wandb
+  pose_visual_frequency:
+    train: 100
+    val: 25
+  visuals_save_dir: "${exp_name}/visualizations"
+
+checkpoint:
+  save_dir: logs/${exp_name}/ckpts
+  save_freq: 5
+  resume_checkpoint_path: /path/to/checkpoints/VGGT-1B/model.pt
+  strict: False

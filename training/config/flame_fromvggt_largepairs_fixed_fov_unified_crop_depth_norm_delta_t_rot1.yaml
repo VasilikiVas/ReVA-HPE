@@ -1,0 +1,19 @@
+defaults:
+  - flame_step1_largepairs_fixed_fov_unified_crop
+  - _self_
+
+exp_name: flame_fromvggt_largepairs_fixed_fov_unified_crop_depth_norm_delta_t_rot1
+
+max_epochs: 411
+
+logging:
+  wandb:
+    name: ${exp_name}
+    id: ${exp_name}
+    tags: ["from-vggt", "large-pairs", "fixed-fov", "unified-crop", "depth-norm-delta-t", "rot-1"]
+    notes: "From-VGGT scratch control: unified crop, fixed FoV, depth-normalized decoupled translation target, full rotation weight."
+
+loss:
+  camera:
+    translation_target_type: "depth_norm_delta_t"
+    weight_rot: 1.0

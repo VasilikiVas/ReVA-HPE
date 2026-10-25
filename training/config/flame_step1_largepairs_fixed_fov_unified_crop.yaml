@@ -1,0 +1,59 @@
+defaults:
+  - flame_step1_fixedpairs_base
+  - _self_
+
+exp_name: flame_step1_largepairs_fixed_fov_unified_crop
+
+max_epochs: 201
+
+data:
+  train:
+    dataset:
+      dataset_configs:
+        - _target_: data.datasets.flame_h2c.FlameH2CDataset
+          split: train
+          root_dirs:
+            - path: /path/to/blended_in_flames/sample_outputs/dataset_20k_hair_v2_fixed_focal_max
+              name: hair
+            - path: /path/to/blended_in_flames/sample_outputs/ar_pose_poc_5k_fixed_focal_max
+              name: nohair
+          pair_csv: /path/to/pair_manifests/flame_step1_fixed_fov_train_pairs.csv
+          len_train: 1000000
+          same_identity: True
+          same_lighting: True
+          same_expression: False
+          n_val_identities_per_root: 5
+          split_seed: 42
+          face_crop: True
+          face_crop_mode: pair_union
+          ad_min: 0.5
+          ad_max: 0.5
+          shift_ratio: 0.0
+          bbox_filename: face_bbox.npy
+          color_aug: True
+          extra_cojitter_ratio: 0.0
+          color_aug_seed_base: 20260529
+  val:
+    dataset:
+      dataset_configs:
+        - _target_: data.datasets.flame_h2c.FlameH2CDataset
+          split: test
+          root_dirs:
+            - path: /path/to/blended_in_flames/sample_outputs/dataset_20k_hair_v2_fixed_focal_max
+              name: hair
+            - path: /path/to/blended_in_flames/sample_outputs/ar_pose_poc_5k_fixed_focal_max
+              name: nohair
+          pair_csv: /path/to/pair_manifests/flame_step1_fixed_fov_test_pairs.csv
+          len_test: 5000
+          same_identity: True
+          same_lighting: True
+          same_expression: False
+          n_val_identities_per_root: 5
+          split_seed: 42
+          face_crop: True
+          face_crop_mode: pair_union
+          ad_min: 0.1
+          ad_max: 0.1
+          shift_ratio: 0.0
+          bbox_filename: face_bbox.npy
+          color_aug: False
